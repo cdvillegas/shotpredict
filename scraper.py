@@ -1,20 +1,21 @@
 """ Player Shot Scraper
 
 This script scrapes play by play shot data from basketball-reference.com
-and exports it as `shots.csv`
 
 This script requires that `pandas` and 'bs4' be installed within the 
 Python environment you are running this script in.
-
 """
 
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import sys
+from time import sleep
 
 url = 'https://www.basketball-reference.com'
 
-def data(pid, yid=''):
+
+def data(pid, yid='', export=False):
 	""" Scrapes and parses play by play data for player 
 	associated with player_id and, optionally, by season
 	
@@ -33,36 +34,44 @@ def data(pid, yid=''):
         A data frame containing play by play data for player
         corresponding to pid
     """
-
 	href = '/play-index/shot_finder.cgi?request=1&match=play&player_id=' + pid + '&year_id=' + yid
 	href += '&order_by=date_game'
 	html = requests.get(url + href)
 	soup = BeautifulSoup(html.content, 'html.parser')
 
-	# Print player name
+	# Print retrieval info
 	name = soup.find('div', id='pi').find('h1').getText().split(' ')[:2]
-	print('Retrieving data for ' + ' '.join(name))
+	season =  'all seasons' if yid == '' else 'the ' + str(int(yid) - 1) + '/' + yid + ' season'
+	print('Retrieving data for ' + ' '.join(name) + " from " + season)
 
-	data = []
-	count = 1
-
+	# Collect tables
+	progressMessage("Collecting tables", 0)
+	tables = []
 	while soup.find('a', text='Next page'):
-		print('Parsing page ' + str(count))
-		# Get table
-		t = table(soup)
+		tables.append(table(soup))
 
-		# Parse table
-		data.extend(parse_table(t))
+		progressMessage("Collecting tables", len(tables))
 
 		# Update soup object
 		href = soup.find('a', text='Next page').get('href')
 		html = requests.get(url + href)
 		soup = BeautifulSoup(html.content, 'html.parser')
-		count += 1
+	progressMessage("Collecting tables: Success\n", 0)
 
-	print('')
+	# Parsing tables
+	progressMessage("Parsing data", 0)
+	data = []
+	l = len(tables)
+	for i, t in enumerate(tables):
+		# Parse table
+		data.extend(parse_table(t))
+	progressMessage("Parsing tables: Success\n", 0)
+
 	df = pd.DataFrame(data)
 	df.columns = ['home', 'distance', 'type', 'assisted', 'result']
+
+	if export:
+		df.to_csv('data/' + pid + yid + '.csv')
 	
 	return df
 			
@@ -216,12 +225,11 @@ def search(query):
 
 		return players
 
+def progressMessage(message, num):
+    # percent float from 0 to 1. 
+    sys.stdout.write('\x1b[2K')
+    sys.stdout.write(message + ('.'* (num % 4)) + "\r")
 
 if __name__ == '__main__':
-	lebron = data('jamesle01', '2020')
-	harden = data('hardeja01', '2020')
-	ball = data('balllo01', '2020')
-	print(ball['result'])
+	lonzo = data('balllo01', '', export=True)
 
-
-	
