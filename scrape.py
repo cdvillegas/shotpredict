@@ -122,6 +122,6 @@ def seasons(pid):
 
 
 if __name__ == '__main__':
-	print(search('brandon ingram'))
+	print(search('brandon i'))
 	lonzo = scrape('ingrabr01', '', export=True)
 

@@ -47,8 +47,6 @@ def build_model(data):
 def design_matrix(pid, yid='', features):
 
 
-
-
 def evaluate(model, x_test, y_test):
 	""" Prints model evaluation statistics
 
@@ -64,7 +62,7 @@ def evaluate(model, x_test, y_test):
     """
 
     # Build y_pred from x_test
-    
+
 
 	# Calculate accuracy, precision, recall
 	tp = sum([1 for pred, test in zip(y_pred, y_test) if 1 == pred == test])
